@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } while (
       snake.some((snakeCell) => snakeCell.x === newX && snakeCell.y === newY)
     );
+    
     food = { x: newX, y: newY };
   }
   function updateSnake() {
