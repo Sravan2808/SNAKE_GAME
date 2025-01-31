@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const gameArena = document.getElementById("game-arena");
-  const areaSize = 600;
+  const arenaSize = 600;
   const cellSize = 20;
   let score = 0;
   let gameStarted = false;
@@ -12,6 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   let dx = cellSize; //displacement on x-axis
   let dy = 0; //displacement on y-axis
+  let gameSpeed = 200;
+  let intervalId;
 
   function drawScoreBoard() {
     const scoreBoard = document.getElementById("score-board");
@@ -40,16 +42,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function moveFood() {
     let newX, newY;
     do {
-      newX = Math.floor(
-        Math.random() * ((areaSize - cellSize) / cellSize) * cellSize
-      );
-      newY = Math.floor(
-        Math.random() * ((areaSize - cellSize) / cellSize) * cellSize
-      );
+      newX =
+        Math.floor(Math.random() * ((arenaSize - cellSize) / cellSize)) *
+        cellSize;
+      newY =
+        Math.floor(Math.random() * ((arenaSize - cellSize) / cellSize)) *
+        cellSize;
     } while (
       snake.some((snakeCell) => snakeCell.x === newX && snakeCell.y === newY)
     );
-    
+
     food = { x: newX, y: newY };
   }
   function updateSnake() {
@@ -60,20 +62,83 @@ document.addEventListener("DOMContentLoaded", () => {
       // collision
       score += 5;
       // don't pop the tail
+      if (gameSpeed > 30) {
+        clearInterval(intervalId);
+        gameSpeed -= 10;
+        gameLoop()
+      }
       moveFood();
       // move the food
     } else snake.pop(); //remove the last cell
   }
+  function isGameOver() {
+    // check snake body hit
+    for (i = 1; i < snake.length; i++) {
+      if (snake[0].x === snake[i].x && snake[0].y === snake[i].y) return true; //game over
+    }
+    // check wall collision
+    const isHittingLeftWall = snake[0].x < 0;
+    const isHittingTopWall = snake[0].y < 0;
+    const isHittingRightWall = snake[0].x >= arenaSize;
+    const isHittingDownWall = snake[0].y >= arenaSize;
+
+    return (
+      isHittingDownWall ||
+      isHittingLeftWall ||
+      isHittingRightWall ||
+      isHittingTopWall
+    );
+  }
   function gameLoop() {
-    setInterval(() => {
+    intervalId = setInterval(() => {
+      if (!gameStarted) return;
+      //check for gameover
+      if (isGameOver()) {
+        gameStarted = false;
+        alert(`Game Over,Score = ${score}`);
+        window.location.reload();
+        return;
+      }
       updateSnake();
       drawScoreBoard();
       drawFoodAndSnake();
-    }, 1000);
+    }, gameSpeed);
+  }
+  function changeDirection(e) {
+    const LEFT_KEY = 37;
+    const RIGHT_KEY = 39;
+    const UP_KEY = 38;
+    const DOWN_KEY = 40;
+
+    const keyPressed = e.keyCode;
+
+    const isGoingUp = dy == -cellSize;
+    const isGoingDown = dy == cellSize;
+    const isGoingLeft = dx == -cellSize;
+    const isGoingRight = dx == cellSize;
+    if (keyPressed === LEFT_KEY && !isGoingRight) {
+      dy = 0;
+      dx = -cellSize;
+    }
+    if (keyPressed === RIGHT_KEY && !isGoingLeft) {
+      dy = 0;
+      dx = cellSize;
+    }
+    if (keyPressed === UP_KEY && !isGoingDown) {
+      dy = -cellSize;
+      dx = 0;
+    }
+    if (keyPressed === DOWN_KEY && !isGoingUp) {
+      dy = cellSize;
+      dx = 0;
+    }
   }
   function runGame() {
-    gameStarted = true;
-    gameLoop();
+    if (!gameStarted) {
+      gameStarted = true;
+      gameLoop();
+      document.addEventListener("keydown", changeDirection);
+    }
   }
 
   function initiateGame() {
